@@ -708,3 +708,8 @@ $('date').value = todayISO();
 fillCategories();
 render();
 requestAnimationFrame(() => root.classList.add('theme-ready'));
+
+// Instalação/offline no telemóvel (só em http/https)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
