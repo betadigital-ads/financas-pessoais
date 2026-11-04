@@ -71,12 +71,13 @@ function newId() { return Date.now() + Math.random().toString(16).slice(2); }
 
 // Sanea cada registo; descarta apenas os inválidos (nunca reescreve o armazenamento no arranque)
 function load() {
-  let data;
   try {
-    data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return sanitizeTransactions(JSON.parse(localStorage.getItem(STORAGE_KEY)));
   } catch {
     return [];
   }
+}
+function sanitizeTransactions(data) {
   if (!Array.isArray(data)) return [];
   const out = [];
   data.forEach((t) => {
@@ -109,18 +110,55 @@ function save() {
 
 function loadBudgets() {
   try {
-    const data = JSON.parse(localStorage.getItem(BUDGET_KEY));
-    const out = {};
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-      Object.keys(data).forEach((k) => {
-        const v = Number(data[k]);
-        if (/^\d{4}-(0[1-9]|1[0-2])$/.test(k) && Number.isFinite(v) && v > 0) out[k] = v;
-      });
-    }
-    return out;
+    return sanitizeBudgets(JSON.parse(localStorage.getItem(BUDGET_KEY)));
   } catch {
     return {};
   }
+}
+function sanitizeBudgets(data) {
+  const out = {};
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    Object.keys(data).forEach((k) => {
+      const v = Number(data[k]);
+      if (/^\d{4}-(0[1-9]|1[0-2])$/.test(k) && Number.isFinite(v) && v > 0 && v <= MAX_AMOUNT) out[k] = v;
+    });
+  }
+  return out;
+}
+
+/* ---------- Exportar / importar ---------- */
+function exportData() {
+  const payload = {
+    app: 'financas-pessoais', version: 1, exportedAt: new Date().toISOString(),
+    transactions, budgets,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `financas-${todayISO()}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Junta os dados do ficheiro aos existentes (por id); nunca apaga nada
+function importData(text) {
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error('O ficheiro não é um JSON válido.'); }
+  if (!data || typeof data !== 'object' || data.app !== 'financas-pessoais') {
+    throw new Error('Este ficheiro não foi exportado por esta aplicação.');
+  }
+  const incoming = sanitizeTransactions(data.transactions);
+  const known = new Set(transactions.map((t) => t.id));
+  const fresh = incoming.filter((t) => !known.has(t.id));
+  const newBudgets = sanitizeBudgets(data.budgets);
+  const budgetsAdded = Object.keys(newBudgets).filter((m) => !has(budgets, m));
+  budgetsAdded.forEach((m) => { budgets[m] = newBudgets[m]; }); // orçamentos já definidos aqui prevalecem
+  transactions = transactions.concat(fresh);
+  const ok = save() && saveBudgets();
+  return { added: fresh.length, skipped: incoming.length - fresh.length, budgetsAdded: budgetsAdded.length, ok };
 }
 function saveBudgets() {
   try {
@@ -696,6 +734,30 @@ $('form').addEventListener('submit', (e) => {
   $('amount').value = '';
   render();
   reportSave(ok);
+});
+
+$('export-btn').addEventListener('click', () => {
+  exportData();
+  $('data-msg').textContent = `Ficheiro com ${transactions.length} transações exportado.`;
+});
+$('import-btn').addEventListener('click', () => $('import-file').click());
+$('import-file').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = ''; // permite voltar a escolher o mesmo ficheiro
+  if (!file) return;
+  const msg = $('data-msg');
+  try {
+    if (file.size > 5 * 1024 * 1024) throw new Error('Ficheiro demasiado grande.');
+    const r = importData(await file.text());
+    editingId = null;
+    render();
+    msg.textContent = `${r.added} transações importadas` +
+      (r.skipped ? `, ${r.skipped} já existiam` : '') +
+      (r.budgetsAdded ? `, ${r.budgetsAdded} orçamentos novos` : '') + '.' +
+      (r.ok ? '' : ` ${SAVE_ERROR}`);
+  } catch (err) {
+    msg.textContent = err.message || 'Não foi possível importar o ficheiro.';
+  }
 });
 
 (function greet() {

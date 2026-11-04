@@ -127,6 +127,17 @@
       <p id="error" class="error" role="alert"></p>
     </section>
 
+    <section class="card" id="dados">
+      <div class="card-head"><h2>Dados e cópia de segurança</h2></div>
+      <p class="budget-text">Os dados ficam guardados só neste aparelho. Exporta um ficheiro e importa-o no outro aparelho (PC ↔ telemóvel). A importação junta os dados e nunca apaga os que já existem.</p>
+      <div class="inline-form">
+        <button type="button" id="export-btn">Exportar</button>
+        <button type="button" id="import-btn">Importar</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <p id="data-msg" class="data-msg" role="status" aria-live="polite"></p>
+    </section>
+
     <section class="card" id="transacoes">
       <div class="card-head"><h2>Transações recentes</h2></div>
       <ul id="list" class="list"></ul>
