@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#DDE0DF">
+  <title>Finanças Pessoais</title>
+  <!-- Aplica o tema antes do primeiro desenho (evita flash). Manter a chave igual à de app.js (THEME_KEY). -->
+  <script>
+    (function () {
+      var theme = null;
+      try {
+        var saved = window.localStorage.getItem('financas.tema');
+        if (saved === 'light' || saved === 'dark') theme = saved;
+      } catch (e) {}
+      if (!theme) {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', theme === 'dark' ? '#07151C' : '#DDE0DF');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="top" id="inicio">
+      <div class="top-title">
+        <h1 id="greeting">Bom dia</h1>
+        <p>Constrói o teu futuro financeiro</p>
+      </div>
+      <div class="top-actions">
+        <label class="month-filter">
+          <span class="sr-only">Período</span>
+          <select id="month-filter" aria-label="Período"></select>
+        </label>
+        <button type="button" class="theme-toggle" id="theme-toggle" data-mode="auto" aria-label="Tema: Automático (sistema). Clica para alterar." title="Tema: Automático (sistema)">
+          <svg class="i i-auto" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          <svg class="i i-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg class="i i-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="balance-card">
+      <div class="balance-head"><span>Saldo total</span></div>
+      <div class="balance-value big" id="total-balance">0,00 €</div>
+      <div class="chips">
+        <div class="chip"><small>Receitas</small><strong id="total-income">0,00 €</strong></div>
+        <div class="chip"><small>Despesas</small><strong id="total-expense">0,00 €</strong></div>
+      </div>
+    </section>
+
+    <section class="card" id="orcamento">
+      <div class="card-head">
+        <h2>Orçamento do mês</h2>
+        <span class="pill" id="budget-pct">—</span>
+      </div>
+      <div class="progress" role="progressbar" aria-label="Orçamento gasto" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p class="budget-text" id="budget-text">Define um orçamento para acompanhar os teus gastos.</p>
+      <form id="budget-form" class="inline-form" novalidate>
+        <input id="budget-input" type="number" step="0.01" min="0" max="1000000000" placeholder="Orçamento (€)" aria-label="Orçamento em euros">
+        <button type="submit" id="budget-btn">Guardar</button>
+      </form>
+      <p id="budget-error" class="error" role="alert"></p>
+    </section>
+
+    <section class="card" id="analise">
+      <div class="card-head">
+        <h2>Despesas por categoria</h2>
+      </div>
+      <div class="donut-wrap">
+        <canvas id="chart" role="img" aria-label="Gráfico circular das despesas por categoria (valores na legenda abaixo)"></canvas>
+        <p id="chart-empty" class="empty">Sem despesas no período.</p>
+        <p id="chart-fail" class="empty" hidden>Gráficos indisponíveis (sem ligação ao Chart.js).</p>
+      </div>
+      <ul id="legend" class="legend"></ul>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Tendência de gastos</h2>
+        <span class="pill">6 meses</span>
+      </div>
+      <div class="bar-wrap">
+        <canvas id="trend" role="img" aria-label="Gráfico de barras com as despesas dos últimos 6 meses"></canvas>
+        <p id="trend-fail" class="empty" hidden>Gráficos indisponíveis (sem ligação ao Chart.js).</p>
+      </div>
+    </section>
+
+    <section class="card" id="nova">
+      <h2>Nova transação</h2>
+      <form id="form" novalidate>
+        <div class="seg" role="group" aria-label="Tipo">
+          <input type="radio" name="type" id="type-expense" value="expense" checked>
+          <label for="type-expense">Despesa</label>
+          <input type="radio" name="type" id="type-income" value="income">
+          <label for="type-income">Receita</label>
+        </div>
+        <label class="field">Descrição
+          <input id="description" type="text" maxlength="60" required>
+        </label>
+        <label class="field">Valor (€)
+          <input id="amount" type="number" step="0.01" min="0.01" max="1000000000" required>
+        </label>
+        <label class="field">Categoria
+          <select id="category"></select>
+        </label>
+        <label class="field">Data
+          <input id="date" type="date" required>
+        </label>
+        <button type="submit" class="primary">Adicionar</button>
+      </form>
+      <p id="error" class="error" role="alert"></p>
+    </section>
+
+    <section class="card" id="transacoes">
+      <div class="card-head"><h2>Transações recentes</h2></div>
+      <ul id="list" class="list"></ul>
+      <p id="list-empty" class="empty">Nenhuma transação no período.</p>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <nav class="nav"aria-label="Navegação">
+    <a href="#inicio"><span class="ico"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Início</a>
+    <a href="#analise"><span class="ico"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>Análise</a>
+    <a href="#nova" class="fab" aria-label="Nova transação">+</a>
+    <a href="#orcamento"><span class="ico"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>Orçamento</a>
+    <a href="#transacoes"><span class="ico"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Transações</a>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
