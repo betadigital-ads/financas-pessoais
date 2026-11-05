@@ -188,6 +188,12 @@ button.primary:hover { background: var(--primary-hover); color: var(--on-primary
 .card { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-card); }
 .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .pill { background: var(--pill-bg); color: var(--pill-fg); font-size: .8rem; font-weight: 500; padding: 4px 12px; border-radius: 999px; }
+.range { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--pill-bg); }
+.range-btn { font: inherit; font-size: .8rem; font-weight: 500; padding: 4px 12px; border: 0; border-radius: 999px; background: transparent; color: var(--pill-fg); cursor: pointer; transition: background-color .2s, color .2s; }
+.range-btn:hover { color: var(--text); }
+.range-btn[aria-pressed="true"] { background: var(--seg-active-bg); color: var(--seg-active-fg); }
+.range-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .range-btn { transition: none; } }
 .pill.warn { background: var(--warn); color: #fff; }
 
 /* Orçamento */

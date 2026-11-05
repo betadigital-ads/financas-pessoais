@@ -100,7 +100,11 @@
     <section class="card">
       <div class="card-head">
         <h2>Tendência de gastos</h2>
-        <span class="pill">6 meses</span>
+        <div class="range" role="group" aria-label="Período">
+          <button type="button" class="range-btn" data-range="3" aria-pressed="false">3 meses</button>
+          <button type="button" class="range-btn" data-range="6" aria-pressed="true">6 meses</button>
+          <button type="button" class="range-btn" data-range="12" aria-pressed="false">12 meses</button>
+        </div>
       </div>
       <div class="bar-wrap">
         <canvas id="trend" role="img" aria-label="Gráfico de barras com as despesas dos últimos 6 meses"></canvas>

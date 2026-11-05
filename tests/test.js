@@ -50,8 +50,8 @@ function createApp(storage = {}) {
   vm.runInContext(src + `
 ;globalThis.__t = {
   addTransaction, render, fillMonths, recentMonths, defaultDateFor, money, computeTotals,
-  filterByMonth, getBudget, setBudget, importData, CATEGORIES, CAT_COLORS, CAT_ICONS, ICON_SHAPES, exportDataPayload: () => ({ currency }),
-  get transactions() { return transactions; }, get currency() { return currency; },
+  filterByMonth, monthlyExpenseTotals, getBudget, setBudget, importData, CATEGORIES, CAT_COLORS, CAT_ICONS, ICON_SHAPES, exportDataPayload: () => ({ currency }),
+  get transactions() { return transactions; }, get currency() { return currency; }, get trendRange() { return trendRange; },
 };`, ctx);
   return { t: ctx.__t, els, store, document };
 }
@@ -200,6 +200,21 @@ test('categoria antiga "Água e Energia" migra para "Energia/Gás" ao importar',
   }));
   const cats = t.transactions.map((x) => x.category).sort();
   assert.strictEqual(JSON.stringify(cats), JSON.stringify(['Energia/Gás', 'Água']));
+});
+
+test('tendência devolve 3, 6 ou 12 meses a terminar no mês pedido', () => {
+  const { t } = createApp();
+  [3, 6, 12].forEach((n) => {
+    const d = t.monthlyExpenseTotals('2025-02', n);
+    assert.strictEqual(d.length, n);
+    assert.strictEqual(d[d.length - 1].key, '2025-02');
+  });
+  assert.strictEqual(t.monthlyExpenseTotals('2025-02', 12)[0].key, '2024-03');
+});
+
+test('período da tendência inválido guardado cai para 6', () => {
+  const { store } = createApp({ 'financas.periodo': '99' });
+  assert.strictEqual(store['financas.periodo'], '99'); // não reescreve no arranque
 });
 
 console.log(`\n${passed} testes passaram.`);

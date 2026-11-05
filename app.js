@@ -2,6 +2,8 @@ const STORAGE_KEY = 'financas.transacoes';
 const BUDGET_KEY = 'financas.orcamentos';
 const THEME_KEY = 'financas.tema'; // mesma chave do script em index.html
 const CURRENCY_KEY = 'financas.moeda';
+const RANGE_KEY = 'financas.periodo';
+const RANGES = [3, 6, 12];
 const MAX_AMOUNT = 1000000000;
 const SAVE_ERROR = 'Não foi possível guardar no navegador; os dados perdem-se ao fechar a página.';
 
@@ -83,6 +85,16 @@ const money = {
     { type: 'currency', value: CURRENCIES[currency].symbol },
   ],
 };
+
+let trendRange = readRange();
+function readRange() {
+  try {
+    const v = Number(window.localStorage.getItem(RANGE_KEY));
+    return RANGES.includes(v) ? v : 6;
+  } catch {
+    return 6;
+  }
+}
 
 let transactions = load();
 let budgets = loadBudgets();
@@ -569,9 +581,17 @@ function renderDonut(list, colors) {
   });
 }
 
+function syncRangeButtons() {
+  document.querySelectorAll('.range-btn').forEach((b) => {
+    b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-range')) === trendRange));
+  });
+  $('trend').setAttribute('aria-label', `Gráfico de barras com as despesas dos últimos ${trendRange} meses`);
+}
+
 function renderTrend(month, colors) {
+  syncRangeButtons();
   const end = month === 'all' ? todayISO().slice(0, 7) : month;
-  const data = monthlyExpenseTotals(end, 6);
+  const data = monthlyExpenseTotals(end, trendRange);
   if (trend) { trend.destroy(); trend = null; }
   trend = new Chart($('trend'), {
     type: 'bar',
@@ -582,7 +602,7 @@ function renderTrend(month, colors) {
         backgroundColor: data.map((d) => (d.key === month ? colors.barActive : colors.barIdle)),
         borderRadius: 10,
         borderSkipped: false,
-        maxBarThickness: 36,
+        maxBarThickness: trendRange > 6 ? 24 : 36,
       }],
     },
     options: {
@@ -731,6 +751,16 @@ $('currency-select').addEventListener('change', (e) => {
 });
 
 // Ciclo: automático (sistema) → claro → escuro → automático
+document.querySelectorAll('.range-btn').forEach((b) => {
+  b.addEventListener('click', () => {
+    const n = Number(b.getAttribute('data-range'));
+    if (!RANGES.includes(n) || n === trendRange) return;
+    trendRange = n;
+    try { window.localStorage.setItem(RANGE_KEY, String(n)); } catch { /* só não persiste */ }
+    renderCharts(view.list, view.month);
+  });
+});
+
 $('theme-toggle').addEventListener('click', () => {
   const order = [null, 'light', 'dark'];
   themeChoice = order[(order.indexOf(themeChoice) + 1) % order.length];
