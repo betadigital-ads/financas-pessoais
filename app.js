@@ -490,7 +490,7 @@ const chartAvailable = () => typeof Chart !== 'undefined';
 function applyChartTheme(colors) {
   Chart.defaults.color = colors.muted;
   Chart.defaults.borderColor = colors.line;
-  Chart.defaults.font.family = "'Outfit', sans-serif";
+  Chart.defaults.font.family = "'Space Grotesk', sans-serif";
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     Chart.defaults.animation = false;
   }
@@ -519,10 +519,10 @@ const centerText = {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = colors.muted;
-    ctx.font = "400 12px 'Outfit', sans-serif";
+    ctx.font = "400 12px 'Space Grotesk', sans-serif";
     ctx.fillText('Total gasto', x, y - 17);
     ctx.fillStyle = colors.text;
-    ctx.font = "700 23px 'Outfit', sans-serif";
+    ctx.font = "700 23px 'Space Grotesk', sans-serif";
     ctx.fillText(money.format(total), x, y + 9);
     ctx.restore();
   },
@@ -600,7 +600,7 @@ function renderTrend(month, colors) {
       datasets: [{
         data: data.map((d) => d.total),
         backgroundColor: data.map((d) => (d.key === month ? colors.barActive : colors.barIdle)),
-        borderRadius: 10,
+        borderRadius: 14,
         borderSkipped: false,
         maxBarThickness: trendRange > 6 ? 24 : 36,
       }],
@@ -868,6 +868,45 @@ $('date').value = todayISO();
 fillCategories();
 render();
 requestAnimationFrame(() => root.classList.add('theme-ready'));
+
+/* ---------- Animações ao fazer scroll ---------- */
+(function scrollEffects() {
+  const targets = [...document.querySelectorAll('.app > section')];
+  if (typeof IntersectionObserver === 'undefined' || !targets.length) return;
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+  const show = (el) => el.classList.add('in');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      show(e.target);
+      io.unobserve(e.target);
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
+  targets.forEach((el, i) => {
+    el.style.setProperty('--d', `${(i % 3) * 80}ms`);
+    el.classList.add('reveal');
+    io.observe(el);
+  });
+  // Rede de segurança: nada fica escondido se o observer falhar
+  setTimeout(() => targets.forEach(show), 2500);
+
+  // Destaca o item ativo da navegação
+  const links = [...document.querySelectorAll('.nav a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const setActive = (a) => {
+    links.forEach((l) => { l.classList.remove('active'); l.removeAttribute('aria-current'); });
+    if (a) { a.classList.add('active'); a.setAttribute('aria-current', 'location'); }
+  };
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      const a = byId.get(e.target.id);
+      if (a && e.isIntersecting) setActive(a);
+    });
+  }, { rootMargin: '-35% 0px -55% 0px', threshold: 0 });
+  byId.forEach((_, id) => { const el = document.getElementById(id); if (el) spy.observe(el); });
+  window.addEventListener('scroll', () => { if (window.scrollY < 40) setActive(null); }, { passive: true });
+})();
 
 // Instalação/offline no telemóvel (só em http/https)
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {

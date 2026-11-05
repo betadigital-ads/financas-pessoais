@@ -29,7 +29,7 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="vendor/chart.umd.min.js"></script>
 </head>
@@ -38,7 +38,7 @@
     <header class="top" id="inicio">
       <div class="top-title">
         <h1 id="greeting">Bom dia</h1>
-        <p>Constrói o teu futuro financeiro</p>
+        <p>O teu painel financeiro</p>
       </div>
       <div class="top-actions">
         <label class="month-filter">
@@ -61,7 +61,7 @@
     </header>
 
     <section class="balance-card">
-      <div class="balance-head"><span>Saldo total</span></div>
+      <div class="balance-head"><span>Saldo total</span><span class="live-dot" aria-hidden="true"></span></div>
       <div class="balance-value big" id="total-balance">0,00 €</div>
       <div class="chips">
         <div class="chip"><small>Receitas</small><strong id="total-income">0,00 €</strong></div>
@@ -100,7 +100,7 @@
     <section class="card">
       <div class="card-head">
         <h2>Tendência de gastos</h2>
-        <div class="range" role="group" aria-label="Período">
+        <div class="range" role="group" aria-label="Intervalo da tendência">
           <button type="button" class="range-btn" data-range="3" aria-pressed="false">3 meses</button>
           <button type="button" class="range-btn" data-range="6" aria-pressed="true">6 meses</button>
           <button type="button" class="range-btn" data-range="12" aria-pressed="false">12 meses</button>
@@ -158,7 +158,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <nav class="nav"aria-label="Navegação">
+  <nav class="nav" aria-label="Navegação">
     <a href="#inicio"><span class="ico"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Início</a>
     <a href="#analise"><span class="ico"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>Análise</a>
     <a href="#nova" class="fab" aria-label="Nova transação">+</a>
