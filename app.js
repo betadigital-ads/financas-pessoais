@@ -6,7 +6,7 @@ const MAX_AMOUNT = 1000000000;
 const SAVE_ERROR = 'Não foi possível guardar no navegador; os dados perdem-se ao fechar a página.';
 
 const CATEGORIES = {
-  expense: ['Alimentação', 'Habitação', 'Transportes', 'Lazer', 'Saúde', 'Educação', 'Internet', 'Água e Energia', 'Outros'],
+  expense: ['Alimentação', 'Habitação', 'Transportes', 'Lazer', 'Saúde', 'Educação', 'Internet', 'Água', 'Energia/Gás', 'Outros'],
   income: ['Salário', 'Freelance', 'Investimentos', 'Outros'],
 };
 
@@ -16,16 +16,16 @@ const CAT_COLORS = {
   light: {
     'Alimentação': '#07151C', 'Habitação': '#DC586D', 'Transportes': '#4B5F6D',
     'Lazer': '#FFB894', 'Saúde': '#A33757', 'Educação': '#8DA4AB',
-    'Internet': '#4C1D3D', 'Água e Energia': '#FB9590', 'Outros': '#B3BFC2',
+    'Internet': '#4C1D3D', 'Água': '#5B9BB5', 'Energia/Gás': '#FB9590', 'Outros': '#B3BFC2',
   },
   dark: {
     'Alimentação': '#CCD0CF', 'Habitação': '#FB9590', 'Transportes': '#8DA4AB',
     'Lazer': '#FFB894', 'Saúde': '#DC586D', 'Educação': '#6E858F',
-    'Internet': '#A33757', 'Água e Energia': '#B8C9CC', 'Outros': '#4B5F6D',
+    'Internet': '#A33757', 'Água': '#7CC0DA', 'Energia/Gás': '#B8C9CC', 'Outros': '#4B5F6D',
   },
 };
 // Categorias antigas (versão em pt-BR) mapeadas para as novas
-const LEGACY = { 'Moradia': 'Habitação', 'Transporte': 'Transportes' };
+const LEGACY = { 'Moradia': 'Habitação', 'Transporte': 'Transportes', 'Água e Energia': 'Energia/Gás' };
 
 // Ícones de linha (24x24, estilo Lucide). Conteúdo estático; a categoria só serve de chave.
 const ICON_SHAPES = {
@@ -36,7 +36,8 @@ const ICON_SHAPES = {
   health: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>',
   cap: '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
   wifi: '<path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/>',
-  utilities: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/><path d="M13 11l-3 4h4l-3 4"/>',
+  utilities: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+  water: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
   more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
   wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
   laptop: '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>',
@@ -46,7 +47,7 @@ const ICON_SHAPES = {
 const CAT_ICONS = {
   expense: {
     'Alimentação': 'cart', 'Habitação': 'home', 'Transportes': 'car', 'Lazer': 'game',
-    'Saúde': 'health', 'Educação': 'cap', 'Internet': 'wifi', 'Água e Energia': 'utilities', 'Outros': 'more',
+    'Saúde': 'health', 'Educação': 'cap', 'Internet': 'wifi', 'Água': 'water', 'Energia/Gás': 'utilities', 'Outros': 'more',
   },
   income: { 'Salário': 'wallet', 'Freelance': 'laptop', 'Investimentos': 'trend', 'Outros': 'more' },
 };
@@ -507,10 +508,10 @@ const centerText = {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = colors.muted;
     ctx.font = "400 12px 'Outfit', sans-serif";
-    ctx.fillText('Total gasto', x, y - 14);
+    ctx.fillText('Total gasto', x, y - 17);
     ctx.fillStyle = colors.text;
-    ctx.font = "600 20px 'Outfit', sans-serif";
-    ctx.fillText(money.format(total), x, y + 8);
+    ctx.font = "700 23px 'Outfit', sans-serif";
+    ctx.fillText(money.format(total), x, y + 9);
     ctx.restore();
   },
 };

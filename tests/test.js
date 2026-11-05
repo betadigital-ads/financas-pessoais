@@ -50,7 +50,7 @@ function createApp(storage = {}) {
   vm.runInContext(src + `
 ;globalThis.__t = {
   addTransaction, render, fillMonths, recentMonths, defaultDateFor, money, computeTotals,
-  filterByMonth, getBudget, setBudget, importData, exportDataPayload: () => ({ currency }),
+  filterByMonth, getBudget, setBudget, importData, CATEGORIES, CAT_COLORS, CAT_ICONS, ICON_SHAPES, exportDataPayload: () => ({ currency }),
   get transactions() { return transactions; }, get currency() { return currency; },
 };`, ctx);
   return { t: ctx.__t, els, store, document };
@@ -117,7 +117,7 @@ test('meses anteriores aceitam transações e ficam isolados dos outros', () => 
   const { t } = createApp();
   const [cur, prev, prev2] = t.recentMonths(3);
   t.addTransaction({ type: 'income', description: 'sal', amount: 1000, category: 'Salário', date: `${prev}-10` });
-  t.addTransaction({ type: 'expense', description: 'luz', amount: 250.5, category: 'Água e Energia', date: `${prev}-12` });
+  t.addTransaction({ type: 'expense', description: 'luz', amount: 250.5, category: 'Energia/Gás', date: `${prev}-12` });
   t.addTransaction({ type: 'expense', description: 'x', amount: 10, category: 'Outros', date: `${cur}-01` });
   const totPrev = t.computeTotals(t.filterByMonth(t.transactions, prev));
   assert.strictEqual(JSON.stringify(totPrev), JSON.stringify({ income: 1000, expense: 250.5, balance: 749.5 }));
@@ -175,6 +175,31 @@ test('exportação inclui a moeda e importação continua compatível', () => {
   assert.strictEqual(r.added, 1);
   assert.strictEqual(r.budgetsAdded, 1);
   assert.strictEqual(t.currency, 'AOA'); // a importação não muda a moeda escolhida
+});
+
+test('"Água" e "Energia/Gás" existem separadas, com cor e ícone', () => {
+  const { t } = createApp();
+  const exp = t.CATEGORIES.expense;
+  assert.ok(exp.includes('Água') && exp.includes('Energia/Gás'));
+  assert.ok(!exp.includes('Água e Energia'));
+  exp.forEach((c) => {
+    assert.ok(t.CAT_COLORS.light[c] && t.CAT_COLORS.dark[c], `cor em falta: ${c}`);
+    assert.ok(t.ICON_SHAPES[t.CAT_ICONS.expense[c]], `ícone em falta: ${c}`);
+  });
+  assert.notStrictEqual(t.CAT_ICONS.expense['Água'], t.CAT_ICONS.expense['Energia/Gás']);
+});
+
+test('categoria antiga "Água e Energia" migra para "Energia/Gás" ao importar', () => {
+  const { t } = createApp();
+  t.importData(JSON.stringify({
+    app: 'financas-pessoais', version: 1,
+    transactions: [
+      { id: 'a', type: 'expense', description: 'luz', amount: 40, category: 'Água e Energia', date: '2024-03-02' },
+      { id: 'b', type: 'expense', description: 'água', amount: 15, category: 'Água', date: '2024-03-03' },
+    ],
+  }));
+  const cats = t.transactions.map((x) => x.category).sort();
+  assert.strictEqual(JSON.stringify(cats), JSON.stringify(['Energia/Gás', 'Água']));
 });
 
 console.log(`\n${passed} testes passaram.`);
