@@ -215,10 +215,10 @@ button.primary:hover { background: var(--primary-hover); color: var(--on-primary
 /* Formulário */
 form#form { display: grid; gap: 12px; margin-top: 12px; }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; color: var(--muted); }
-.seg { --seg-thumb: #DC586D; position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; background: var(--seg-track); border-radius: 999px; padding: 4px; }
-.seg:has(#type-income:checked) { --seg-thumb: #2F8F6B; }
+.seg { --seg-thumb: #2F8F6B; position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; background: var(--seg-track); border-radius: 999px; padding: 4px; }
+.seg:has(#type-expense:checked) { --seg-thumb: #DC586D; }
 .seg::before { content: ""; position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 999px; background: var(--seg-thumb); box-shadow: 0 2px 8px rgba(7, 21, 28, .25); transition: transform .3s cubic-bezier(.4, 0, .2, 1), background-color .3s; }
-.seg:has(#type-income:checked)::before { transform: translateX(100%); }
+.seg:has(#type-expense:checked)::before { transform: translateX(100%); }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 999px; cursor: pointer; font-weight: 500; color: var(--seg-fg); transition: color .25s; user-select: none; }
 .seg label .i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .3s; }
