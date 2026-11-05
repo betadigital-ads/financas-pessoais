@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'financas.transacoes';
 const BUDGET_KEY = 'financas.orcamentos';
 const THEME_KEY = 'financas.tema'; // mesma chave do script em index.html
+const CURRENCY_KEY = 'financas.moeda';
 const MAX_AMOUNT = 1000000000;
 const SAVE_ERROR = 'Não foi possível guardar no navegador; os dados perdem-se ao fechar a página.';
 
@@ -54,11 +55,33 @@ const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Jul
   'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-const CURRENCY = { style: 'currency', currency: 'EUR' };
-const eur = new Intl.NumberFormat('pt-PT', CURRENCY);
 const $ = (id) => document.getElementById(id);
 const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 const toCents = (n) => Math.round(n * 100);
+
+// Moedas: só muda a apresentação; os valores guardados não são convertidos
+const CURRENCIES = {
+  EUR: { symbol: '€', name: 'euros' },
+  AOA: { symbol: 'Kz', name: 'kwanzas' },
+};
+const DEC = new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+let currency = readCurrency();
+function readCurrency() {
+  try {
+    const v = window.localStorage.getItem(CURRENCY_KEY);
+    return has(CURRENCIES, v) ? v : 'EUR';
+  } catch {
+    return 'EUR';
+  }
+}
+const money = {
+  format: (v) => `${DEC.format(v)} ${CURRENCIES[currency].symbol}`,
+  formatToParts: (v) => [
+    ...DEC.formatToParts(v),
+    { type: 'literal', value: ' ' },
+    { type: 'currency', value: CURRENCIES[currency].symbol },
+  ],
+};
 
 let transactions = load();
 let budgets = loadBudgets();
@@ -130,7 +153,7 @@ function sanitizeBudgets(data) {
 function exportData() {
   const payload = {
     app: 'financas-pessoais', version: 1, exportedAt: new Date().toISOString(),
-    transactions, budgets,
+    currency, transactions, budgets,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -277,7 +300,7 @@ function setBig(el, value) {
   const cents = document.createElement('span');
   cents.className = 'cents';
   let inCents = false;
-  eur.formatToParts(value).forEach((p) => {
+  money.formatToParts(value).forEach((p) => {
     if (p.type === 'decimal') inCents = true;
     if (inCents) cents.append(p.value); else el.append(p.value);
   });
@@ -353,13 +376,25 @@ function fillCategories() {
   $('category').replaceChildren(...CATEGORIES[selectedType()].map((c) => new Option(c, c)));
 }
 
+// Últimos n meses (do atual para trás) como "YYYY-MM"
+function recentMonths(n) {
+  let [y, m] = todayISO().slice(0, 7).split('-').map(Number);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    out.push(`${y}-${String(m).padStart(2, '0')}`);
+    m--;
+    if (m === 0) { m = 12; y--; }
+  }
+  return out;
+}
+
 function fillMonths() {
   const select = $('month-filter');
   const now = todayISO().slice(0, 7);
   const current = select.value || now;
   const months = new Set(transactions.map((t) => t.date.slice(0, 7)));
   Object.keys(budgets).forEach((m) => months.add(m));
-  months.add(now);
+  recentMonths(24).forEach((m) => months.add(m)); // meses anteriores vazios também aceitam dados
   const options = [new Option('Todos', 'all')];
   [...months].sort().reverse().forEach((m) => {
     const [y, mm] = m.split('-');
@@ -367,6 +402,22 @@ function fillMonths() {
   });
   select.replaceChildren(...options);
   select.value = [...select.options].some((o) => o.value === current) ? current : 'all';
+}
+
+// Data sugerida para o formulário conforme o mês escolhido no filtro
+function defaultDateFor(month) {
+  const today = todayISO();
+  if (month === 'all' || month === today.slice(0, 7)) return today;
+  return `${month}-01`;
+}
+
+// Textos fixos que dependem da moeda
+function applyCurrencyLabels() {
+  const { symbol, name } = CURRENCIES[currency];
+  $('currency-select').value = currency;
+  $('amount-label').textContent = `Valor (${symbol})`;
+  $('budget-input').placeholder = `Orçamento (${symbol})`;
+  $('budget-input').setAttribute('aria-label', `Orçamento em ${name}`);
 }
 
 function renderBudget(list, month) {
@@ -402,7 +453,7 @@ function renderBudget(list, month) {
     pill.textContent = 'Sem orçamento';
     pill.classList.remove('warn');
     $('progress').setAttribute('aria-valuenow', 0);
-    text.textContent = `Gastaste ${eur.format(spent)} este mês. Define um orçamento para acompanhar.`;
+    text.textContent = `Gastaste ${money.format(spent)} este mês. Define um orçamento para acompanhar.`;
     return;
   }
 
@@ -416,8 +467,8 @@ function renderBudget(list, month) {
   pill.classList.toggle('warn', pct >= 80);
   $('progress').setAttribute('aria-valuenow', Math.min(Math.round(pct), 100));
   text.textContent = over
-    ? `${eur.format(spent)} de ${eur.format(budget)} · Excedeste em ${eur.format((spentC - budgetC) / 100)}`
-    : `${eur.format(spent)} de ${eur.format(budget)} · Restam ${eur.format((budgetC - spentC) / 100)}`;
+    ? `${money.format(spent)} de ${money.format(budget)} · Excedeste em ${money.format((spentC - budgetC) / 100)}`
+    : `${money.format(spent)} de ${money.format(budget)} · Restam ${money.format((budgetC - spentC) / 100)}`;
 }
 
 /* ---------- Gráficos ---------- */
@@ -459,7 +510,7 @@ const centerText = {
     ctx.fillText('Total gasto', x, y - 14);
     ctx.fillStyle = colors.text;
     ctx.font = "600 20px 'Outfit', sans-serif";
-    ctx.fillText(eur.format(total), x, y + 8);
+    ctx.fillText(money.format(total), x, y + 8);
     ctx.restore();
   },
 };
@@ -510,7 +561,7 @@ function renderDonut(list, colors) {
       centerColors: colors,
       plugins: {
         legend: { display: false },
-        tooltip: tooltipStyle(colors, (c) => ` ${c.label}: ${eur.format(c.parsed)}`),
+        tooltip: tooltipStyle(colors, (c) => ` ${c.label}: ${money.format(c.parsed)}`),
       },
     },
     plugins: [centerText],
@@ -537,7 +588,7 @@ function renderTrend(month, colors) {
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: tooltipStyle(colors, (c) => ` ${eur.format(c.parsed.y)}`),
+        tooltip: tooltipStyle(colors, (c) => ` ${money.format(c.parsed.y)}`),
       },
       scales: {
         x: { grid: { display: false }, border: { display: false }, ticks: { color: colors.muted } },
@@ -593,7 +644,7 @@ function renderList(list) {
     info.append(title, meta);
     const amount = document.createElement('span');
     amount.className = `amount ${t.type}`;
-    amount.textContent = (t.type === 'expense' ? '− ' : '+ ') + eur.format(t.amount);
+    amount.textContent = (t.type === 'expense' ? '− ' : '+ ') + money.format(t.amount);
     const edit = document.createElement('button');
     edit.className = 'del edit';
     edit.type = 'button';
@@ -656,8 +707,8 @@ function render() {
   const bal = $('total-balance');
   setBig(bal, totals.balance);
   bal.classList.toggle('negative', totals.balance < 0);
-  $('total-income').textContent = eur.format(totals.income);
-  $('total-expense').textContent = eur.format(totals.expense);
+  $('total-income').textContent = money.format(totals.income);
+  $('total-expense').textContent = money.format(totals.expense);
   renderBudget(list, month);
   renderList(list);
   renderCharts(list, month); // por último: uma falha nos gráficos não afeta o resto
@@ -665,7 +716,18 @@ function render() {
 
 /* ---------- Eventos ---------- */
 document.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', fillCategories));
-$('month-filter').addEventListener('change', render);
+$('month-filter').addEventListener('change', () => {
+  $('date').value = defaultDateFor($('month-filter').value);
+  render();
+});
+
+$('currency-select').addEventListener('change', (e) => {
+  if (!has(CURRENCIES, e.target.value)) return;
+  currency = e.target.value;
+  try { window.localStorage.setItem(CURRENCY_KEY, currency); } catch { /* vale só nesta sessão */ }
+  applyCurrencyLabels();
+  render();
+});
 
 // Ciclo: automático (sistema) → claro → escuro → automático
 $('theme-toggle').addEventListener('click', () => {
@@ -683,6 +745,7 @@ $('theme-toggle').addEventListener('click', () => {
 window.addEventListener('storage', (e) => {
   if (e.key === STORAGE_KEY || (e.key === null)) { transactions = load(); budgets = loadBudgets(); editingId = null; render(); }
   else if (e.key === BUDGET_KEY) { budgets = loadBudgets(); render(); }
+  else if (e.key === CURRENCY_KEY) { currency = readCurrency(); applyCurrencyLabels(); render(); }
   else if (e.key === THEME_KEY) { themeChoice = readThemeChoice(); applyTheme(); renderCharts(view.list, view.month); }
 });
 
@@ -732,6 +795,9 @@ $('form').addEventListener('submit', (e) => {
   const ok = addTransaction({ type: selectedType(), description, amount, category: $('category').value, date });
   $('description').value = '';
   $('amount').value = '';
+  // Mostra o mês da transação (o filtro salta para ele) para o registo ficar visível
+  fillMonths();
+  $('month-filter').value = date.slice(0, 7);
   render();
   reportSave(ok);
 });
@@ -766,6 +832,7 @@ $('import-file').addEventListener('change', async (e) => {
 })();
 
 applyTheme();
+applyCurrencyLabels();
 $('date').value = todayISO();
 fillCategories();
 render();

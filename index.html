@@ -45,6 +45,13 @@
           <span class="sr-only">Período</span>
           <select id="month-filter" aria-label="Período"></select>
         </label>
+        <label class="month-filter">
+          <span class="sr-only">Moeda</span>
+          <select id="currency-select" aria-label="Moeda">
+            <option value="EUR">Euro (€)</option>
+            <option value="AOA">Kwanza (Kz)</option>
+          </select>
+        </label>
         <button type="button" class="theme-toggle" id="theme-toggle" data-mode="auto" aria-label="Tema: Automático (sistema). Clica para alterar." title="Tema: Automático (sistema)">
           <svg class="i i-auto" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
           <svg class="i i-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
@@ -113,7 +120,7 @@
         <label class="field">Descrição
           <input id="description" type="text" maxlength="60" required>
         </label>
-        <label class="field">Valor (€)
+        <label class="field"><span id="amount-label">Valor (€)</span>
           <input id="amount" type="number" step="0.01" min="0.01" max="1000000000" required>
         </label>
         <label class="field">Categoria
