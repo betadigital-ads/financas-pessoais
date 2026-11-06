@@ -1,5 +1,5 @@
 // Service worker: a app abre offline. Rede primeiro (para receber atualizações), cache como alternativa.
-const CACHE = 'financas-v7';
+const CACHE = 'financas-v8';
 const ASSETS = ['./', 'index.html', 'style.css', 'app.js', 'vendor/chart.umd.min.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg'];
 

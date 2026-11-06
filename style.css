@@ -186,7 +186,22 @@ input:-webkit-autofill {
   box-shadow: 0 0 0 100px var(--input-bg) inset;
 }
 .month-filter select { width: auto; max-width: 100%; border-radius: 999px; padding: 10px 16px; background: var(--glass); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-color: var(--glass-border); }
+@media (max-width: 600px) {
+  .top-actions { flex-wrap: nowrap; width: 100%; justify-content: space-between; }
+  .month-filter { flex: 1 1 0; }
+  .month-filter select { width: 100%; text-overflow: ellipsis; }
+}
 @media (max-width: 420px) { .month-filter select { padding: 10px 12px; } }
+
+/* Campo de data: mesmo aspeto dos restantes campos no mobile */
+input[type="date"] {
+  -webkit-appearance: none; appearance: none; display: block;
+  min-width: 0; min-height: 46px; line-height: 1.2; text-align: left;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+input[type="date"]::-webkit-datetime-edit { padding: 0; }
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: .7; }
+form#form input, form#form select { min-height: 46px; }
 
 button {
   background: var(--btn); color: var(--btn-fg); border: none; border-radius: 14px;
